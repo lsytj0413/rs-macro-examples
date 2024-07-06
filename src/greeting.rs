@@ -7,6 +7,7 @@ macro_rules! greeting {
     ($name:literal) => {
         {
             // use $crate::greeting::base_greeting_fn;
+            log_syntax!("The name passed is ", $name);
             base_greeting_fn($name, "Hello")
         }
     };
