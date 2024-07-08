@@ -1,4 +1,9 @@
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref GREETING: String = "lazy string".to_string();
+}
+
 fn main() {
-    let s = "Hello, world!";
-    println!("Hello, world, {}", s);
+    println!("Hello, world, {}", *GREETING);
 }
