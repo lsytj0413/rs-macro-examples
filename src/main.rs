@@ -28,7 +28,32 @@ macro_rules! generate_get_value {
     }
 }
 
-generate_get_value!(FirstName);
+macro_rules! generate_from {
+    ($struct_type:ident) => {
+        generate_from!($struct_type, String);
+    };
+    ($struct_type:ident, $from_type:ident) => {
+        impl From<$from_type> for $struct_type {
+            fn from(v: $from_type) -> Self {
+                Self {
+                    value: v,
+                }
+            }
+        }
+    }
+}
+
+macro_rules! generate_newtypes_methods {
+    ($struct_type:ident) => {
+        generate_newtypes_methods!($struct_type, String);
+    };
+    ($struct_type:ident, $value_type:ident) => {
+        generate_from!($struct_type, $value_type);
+        generate_get_value!($struct_type, $value_type);
+    };
+}
+
+generate_newtypes_methods!(FirstName);
 generate_get_value!(LastName);
 generate_get_value!(Age, i32);
 generate_get_value!(Pay, i32);
@@ -44,9 +69,7 @@ fn calculate_raise(first_name: FirstName, last_name: LastName, age: Age, pay: Pa
 }
 
 fn main() {
-    let s = calculate_raise(FirstName{
-        value: "Sam".to_string(),
-    }, LastName{
+    let s = calculate_raise(FirstName::from("Sam".to_string()), LastName{
         value: "Smith".to_string(),
     }, Age{
         value: 32,
