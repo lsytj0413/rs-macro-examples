@@ -2,9 +2,9 @@
 extern crate hello_world_macro;
 
 #[derive(Hello)]
-struct Example;
+struct ExampleStruct;
 
 fn main() {
-    let s = "Hello, world!";
-    println!("Hello, world, {}", s);
+    let e = ExampleStruct{};
+    e.hello_world();
 }
