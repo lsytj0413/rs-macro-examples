@@ -1,14 +1,12 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+// extern crate core;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use proc_macro::TokenStream;
+use syn::{parse_macro_input, DeriveInput};
+use quote::quote;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[proc_macro_attribute]
+pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let _ast = parse_macro_input!(item as DeriveInput);
+    let public_version = quote!{};
+    public_version.into()
 }
