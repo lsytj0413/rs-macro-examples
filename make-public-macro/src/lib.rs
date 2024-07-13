@@ -18,16 +18,26 @@ impl ToTokens for StructField {
 
 impl Parse for StructField {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        // We must read the visibility if it exists, otherwise we will
-        // got an error when parse_terminated the colon.
-        // `expected identifier, found keyword `pub``
-        let _vis: Result<Visibility, _> = input.parse();
-        let list = Punctuated::<Ident, Colon>::parse_terminated(input).unwrap();
+        // cursor is an (0, 1) struct, which 1 is the rest of idents
+        let first = input.cursor().ident().unwrap();
+        let res = if first.0.to_string().contains("pub") {
+            let second = first.1.ident().unwrap();
+            let third = second.1.punct().unwrap().1.ident().unwrap();
+            Ok(StructField{
+                name: second.0,
+                ty: third.0,
+            })
+        } else {
+            let second = first.1.punct().unwrap().1.ident().unwrap();
+            Ok(StructField{
+                name: first.0,
+                ty: second.0,
+            })
+        };
 
-        Ok(StructField {
-            name: list.first().unwrap().clone(),
-            ty: list.last().unwrap().clone(),
-        })
+        // We must consume the rest of the input
+        let _: Result<proc_macro2::TokenStream, _> = input.parse();
+        res
     }
 }
 
