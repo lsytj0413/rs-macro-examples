@@ -1,4 +1,9 @@
+use upper_case_macro::UpperCaseName;
+
+#[derive(UpperCaseName)]
+struct Example;
+
 fn main() {
-    let s = "Hello, world!";
-    println!("Hello, world, {}", s);
+    let s = Example {};
+    s.uppercase();
 }
