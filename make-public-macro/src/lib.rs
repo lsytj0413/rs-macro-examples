@@ -1,38 +1,48 @@
 use proc_macro2::Ident;
 use proc_macro::TokenStream;
-use syn::{parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, token::Colon, Data::Struct, DataStruct, DeriveInput, Fields::Named, FieldsNamed, Visibility};
+use syn::{parse::{Parse, ParseStream}, parse_macro_input, Data::Struct, DataStruct, DeriveInput, Fields::Named, Fields::Unnamed, FieldsNamed, FieldsUnnamed};
 use quote::{quote, ToTokens};
 
 struct StructField {
-    name: Ident,
+    name: Option<Ident>,
     ty: Ident,
 }
 
 impl ToTokens for StructField {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let n = &self.name;
-        let t = &self.ty;
-        quote!(pub #n: #t).to_tokens(tokens)
+        match &self.name {
+            Some(name) => {
+                let t = &self.ty;
+                quote! {pub #name: #t}.to_tokens(tokens)
+            },
+            None => {
+                let t = &self.ty;
+                quote! {pub #t}.to_tokens(tokens)
+            }
+        }
     }
 }
 
 impl Parse for StructField {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
         // cursor is an (0, 1) struct, which 1 is the rest of idents
-        let first = input.cursor().ident().unwrap();
-        let res = if first.0.to_string().contains("pub") {
-            let second = first.1.ident().unwrap();
-            let third = second.1.punct().unwrap().1.ident().unwrap();
-            Ok(StructField{
-                name: second.0,
-                ty: third.0,
-            })
-        } else {
-            let second = first.1.punct().unwrap().1.ident().unwrap();
-            Ok(StructField{
-                name: first.0,
-                ty: second.0,
-            })
+        let mut first = input.cursor().ident().unwrap();
+        if first.0.to_string().contains("pub") {
+            first = first.1.ident().unwrap();
+        };
+        let res = match first.1.punct() {
+            Some(second) => {
+                Ok(StructField{
+                    name: Some(first.0),
+                    ty: second.1.ident().unwrap().0,
+                })
+            },
+            None => {
+                Ok(StructField{
+                    name: None,
+                    ty: first.0,
+                })
+            }
         };
 
         // We must consume the rest of the input
@@ -47,7 +57,7 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
     eprintln!("{:?}", &ast);
 
     let name = ast.ident;
-    let fields = match ast.data {
+    let (fields, is_named) = match ast.data {
         Struct(
             DataStruct{
                 fields: Named(
@@ -55,17 +65,31 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         ref named, ..
                     }),..
             }
-        ) => named,
-        _ => unimplemented!("only works for structs with named fields")
+        ) => (named, true),
+        Struct(
+            DataStruct {
+                fields: Unnamed(
+                    FieldsUnnamed {
+                        ref unnamed, ..
+                    }), ..
+            }
+        ) => (unnamed, false),
+        _ => unimplemented!("only works for structs with named or unamed fields")
     };
     let builder_fields = fields.iter().map(|f| {
         syn::parse2::<StructField>(f.to_token_stream()).unwrap()
     });
+    let builder_fields2 = builder_fields.clone();
 
-    let public_version = quote!{
+    let mut public_version = quote!{
         pub struct #name {
             #(#builder_fields,)*
         }
     };
+    if !is_named {
+        public_version = quote!{
+            pub struct #name(#(#builder_fields2,)*);
+        }
+    }
     public_version.into()
 }
