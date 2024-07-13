@@ -1,20 +1,11 @@
 use proc_macro2::Ident;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, Type, Data::Struct, DataStruct, DeriveInput, Field, Fields::Named, FieldsNamed};
+use syn::{parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, token::Colon, Data::Struct, DataStruct, DeriveInput, Fields::Named, FieldsNamed, Visibility};
 use quote::{quote, ToTokens};
 
 struct StructField {
     name: Ident,
-    ty: Type,
-}
-
-impl StructField {
-    fn new(field: &Field) -> Self {
-        Self {
-            name: field.ident.as_ref().unwrap().clone(),
-            ty: field.ty.clone(),
-        }
-    }
+    ty: Ident,
 }
 
 impl ToTokens for StructField {
@@ -22,6 +13,21 @@ impl ToTokens for StructField {
         let n = &self.name;
         let t = &self.ty;
         quote!(pub #n: #t).to_tokens(tokens)
+    }
+}
+
+impl Parse for StructField {
+    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+        // We must read the visibility if it exists, otherwise we will
+        // got an error when parse_terminated the colon.
+        // `expected identifier, found keyword `pub``
+        let _vis: Result<Visibility, _> = input.parse();
+        let list = Punctuated::<Ident, Colon>::parse_terminated(input).unwrap();
+
+        Ok(StructField {
+            name: list.first().unwrap().clone(),
+            ty: list.last().unwrap().clone(),
+        })
     }
 }
 
@@ -40,7 +46,9 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
         ) => named,
         _ => unimplemented!("only works for structs with named fields")
     };
-    let builder_fields = fields.iter().map(StructField::new);
+    let builder_fields = fields.iter().map(|f| {
+        syn::parse2::<StructField>(f.to_token_stream()).unwrap()
+    });
 
     let public_version = quote!{
         pub struct #name {
