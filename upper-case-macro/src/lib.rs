@@ -13,6 +13,9 @@ pub fn uppercase(item: TokenStream) -> TokenStream {
             fn uppercase(&self) {
                 println!("{}", #uppercase_name);
             }
+            fn testing_testing() {
+                println!("One two three");
+            }
         }
     };
     add_uppercase.into()

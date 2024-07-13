@@ -6,4 +6,5 @@ struct Example;
 fn main() {
     let s = Example {};
     s.uppercase();
+    Example::testing_testing();
 }
