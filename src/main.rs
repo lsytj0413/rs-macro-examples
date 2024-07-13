@@ -1,15 +1,9 @@
-use make_public_macro::public;
+use make_public_macro::delete;
 
-#[public]
-struct Example {
-    first: String,
-    pub second: u32,
-}
+#[delete]
+struct EmptyStruct {}
 
 fn main() {
-    let s = Example {
-        first: "example".to_string(),
-        second: 42,
-    };
-    println!("Hello, world, {}, {}", s.first, s.second);
+    let s = "delete";
+    println!("Hello, world, {}", s);
 }
