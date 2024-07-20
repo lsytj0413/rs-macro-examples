@@ -13,6 +13,6 @@ fn main() {
         number_value: 42,
     };
     
-    e.get_string_value();
-    e.get_number_value();
+    println!("string: {}", e.get_string_value());
+    println!("number: {}", e.get_number_value());
 }
