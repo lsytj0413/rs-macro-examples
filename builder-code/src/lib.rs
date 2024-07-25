@@ -11,3 +11,31 @@ pub fn create_builder(item: TokenStream) -> TokenStream {
         struct #builder {}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builder_struct_name_shoule_be_present_in_output() {
+        let input = quote! {
+            struct StructWithNoFields {}
+        };
+        let expected = quote! {
+            struct StructWithNoFieldsBuilder {}
+        };
+
+        let actual = create_builder(input);
+
+        // Option 1：basic assertion
+        assert!(actual.to_string().contains("StructWithNoFieldsBuilder"));
+
+        // Option 2：check the entire output, is useful
+        assert_eq!(actual.to_string(), expected.to_string());
+
+        // Option 3：most powerful, but too complex
+        let derived: DeriveInput = syn::parse2(actual).unwrap();
+        let name = derived.ident;
+        assert_eq!(name.to_string(), "StructWithNoFieldsBuilder");
+    }
+}
