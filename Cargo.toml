@@ -2,5 +2,5 @@
 members = [
     "builder-macro",
     "builder-code",
-    "builder-usage"
+    "builder-usage",
 ]

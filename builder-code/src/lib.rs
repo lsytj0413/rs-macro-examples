@@ -9,6 +9,18 @@ pub fn create_builder(item: TokenStream) -> TokenStream {
 
     quote! {
         struct #builder {}
+
+        impl #builder {
+            pub fn build(&self) -> #name {
+                #name {}
+            }
+        }
+
+        impl #name {
+            pub fn builder() -> #builder {
+                #builder{}
+            }
+        }
     }
 }
 
@@ -23,6 +35,18 @@ mod tests {
         };
         let expected = quote! {
             struct StructWithNoFieldsBuilder {}
+
+            impl StructWithNoFieldsBuilder {
+                pub fn build(&self) -> StructWithNoFields {
+                    StructWithNoFields {}
+                }
+            }
+
+            impl StructWithNoFields {
+                pub fn builder() -> StructWithNoFieldsBuilder {
+                    StructWithNoFieldsBuilder{}
+                }
+            }
         };
 
         let actual = create_builder(input);
@@ -34,8 +58,8 @@ mod tests {
         assert_eq!(actual.to_string(), expected.to_string());
 
         // Option 3：most powerful, but too complex
-        let derived: DeriveInput = syn::parse2(actual).unwrap();
-        let name = derived.ident;
-        assert_eq!(name.to_string(), "StructWithNoFieldsBuilder");
+        // let derived: DeriveInput = syn::parse2(actual).unwrap();
+        // let name = derived.ident;
+        // assert_eq!(name.to_string(), "StructWithNoFieldsBuilder");
     }
 }
