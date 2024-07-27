@@ -65,4 +65,15 @@ mod tests {
         assert_eq!(gleipnir.breath_of_a_fish, 1);
         assert_eq!(gleipnir.other_attrs, vec!["a".to_string(), "b".to_string()]);
     }
+
+    #[test]
+    #[should_panic]
+    fn should_panic_when_field_is_missing() {
+        #[derive(Builder)]
+        struct Gleipnir {
+            _roots_of: String,
+        }
+
+        Gleipnir::builder().build();
+    }
 }
