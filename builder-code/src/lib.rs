@@ -41,7 +41,7 @@ pub fn create_builder(item: TokenStream) -> TokenStream {
         impl #builder {
             #(#builder_methods)*
 
-            pub fn build(&self) -> #name {
+            pub fn build(self) -> #name {
                 #name {
                     #(#set_fields,)*
                 }
@@ -67,30 +67,38 @@ mod tests {
         let input = quote! {
             struct StructWithNoFields {
                 f: String,
-                v: u8
+                v: u8,
+                attrs: Vec<String>
             }
         };
         let expected = quote! {
             struct StructWithNoFieldsBuilder {
                 f: Option<String>,
                 v: Option<u8>,
+                attrs: Option<Vec<String> >,
             }
 
             impl StructWithNoFieldsBuilder {
-                pub fn f(&mut self, input: String) -> &mut Self {
+                pub fn f(mut self, input: String) -> Self {
                     self.f = Some(input);
                     self
                 }
 
-                pub fn v(&mut self, input: u8) -> &mut Self {
+                pub fn v(mut self, input: u8) -> Self {
                     self.v = Some(input);
                     self
                 }
 
-                pub fn build(&self) -> StructWithNoFields {
+                pub fn attrs(mut self, input: Vec<String>) -> Self {
+                    self.attrs = Some(input);
+                    self
+                }
+
+                pub fn build(self) -> StructWithNoFields {
                     StructWithNoFields {
-                        f: self.f.as_ref().expect(&format!("field {} is not set", "f")).to_string(),
-                        v: self.v.expect(&format!("field {} is not set", "v")).clone(),
+                        f: self.f.expect(concat!("field is not set: ", "f")),
+                        v: self.v.expect(concat!("field is not set: ", "v")),
+                        attrs: self.attrs.expect(concat!("field is not set: ", "attrs")),
                     }
                 }
             }
@@ -100,6 +108,7 @@ mod tests {
                     StructWithNoFieldsBuilder{
                         f: None,
                         v: None,
+                        attrs: None,
                     }
                 }
             }

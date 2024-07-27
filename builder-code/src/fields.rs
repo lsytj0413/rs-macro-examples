@@ -5,6 +5,7 @@ use syn::token::{Comma};
 use syn::{Field, Ident};
 use syn::Type;
 
+#[allow(dead_code)]
 fn matches_type(ty: &Type, type_name: &str) -> bool {
     if let Type::Path(ref p) = ty {
         let first_match = p.path.segments[0].ident.to_string();
@@ -48,7 +49,7 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item 
         let (field_name, field_type) = get_name_and_type(f);
         quote! {
             // an method to set the field
-            pub fn #field_name(&mut self, input: #field_type) -> &mut Self {
+            pub fn #field_name(mut self, input: #field_type) -> Self {
                 self.#field_name = Some(input);
                 self
             }
@@ -58,23 +59,14 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item 
 
 pub fn original_struct_setters(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item = TokenStream> + '_ {
     fields.iter().map(|f| {
-        let (field_name, field_type) = get_name_and_type(f);
+        let (field_name, _) = get_name_and_type(f);
         let field_name_as_string = field_name.as_ref().unwrap().to_string();
-        let error = quote! {
-            expect(&format!("field {} is not set", #field_name_as_string))
-        };
-        // set original struct fields from builder's option fields
-        let handle_type = if matches_type(field_type, "String") {
-            quote! {
-                as_ref().#error.to_string()
-            }
-        } else {
-            quote! {
-                #error.clone()
-            }
-        };
-
-        quote! { #field_name: self.#field_name.#handle_type }
+        quote! {
+            #field_name: self.#field_name
+                .expect(
+                    concat!("field is not set: ", #field_name_as_string)
+                )
+        }
     })
 }
 
