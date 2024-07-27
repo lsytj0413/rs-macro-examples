@@ -67,11 +67,13 @@ mod tests {
         let input = quote! {
             struct StructWithNoFields {
                 f: String,
+                v: u8
             }
         };
         let expected = quote! {
             struct StructWithNoFieldsBuilder {
                 f: Option<String>,
+                v: Option<u8>,
             }
 
             impl StructWithNoFieldsBuilder {
@@ -80,9 +82,15 @@ mod tests {
                     self
                 }
 
+                pub fn v(&mut self, input: u8) -> &mut Self {
+                    self.v = Some(input);
+                    self
+                }
+
                 pub fn build(&self) -> StructWithNoFields {
                     StructWithNoFields {
                         f: self.f.as_ref().expect(&format!("field {} is not set", "f")).to_string(),
+                        v: self.v.expect(&format!("field {} is not set", "v")).clone(),
                     }
                 }
             }
@@ -91,6 +99,7 @@ mod tests {
                 pub fn builder() -> StructWithNoFieldsBuilder {
                     StructWithNoFieldsBuilder{
                         f: None,
+                        v: None,
                     }
                 }
             }

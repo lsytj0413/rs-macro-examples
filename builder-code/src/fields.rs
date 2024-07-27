@@ -5,6 +5,15 @@ use syn::token::{Comma};
 use syn::{Field, Ident};
 use syn::Type;
 
+fn matches_type(ty: &Type, type_name: &str) -> bool {
+    if let Type::Path(ref p) = ty {
+        let first_match = p.path.segments[0].ident.to_string();
+        return first_match == *type_name;
+    }
+
+    false
+}
+
 // We can omit lifetime because `lifetime elision rules`:
 // 1. Each elided lifetime in input position becomes a distinct lifetime parameter.
 // 2. If there is exactly one input lifetime position (elided or not), that lifetime is assigned to all elided output lifetimes.
@@ -49,15 +58,23 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item 
 
 pub fn original_struct_setters(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item = TokenStream> + '_ {
     fields.iter().map(|f| {
-        let (field_name, _) = get_name_and_type(f);
+        let (field_name, field_type) = get_name_and_type(f);
         let field_name_as_string = field_name.as_ref().unwrap().to_string();
+        let error = quote! {
+            expect(&format!("field {} is not set", #field_name_as_string))
+        };
+        // set original struct fields from builder's option fields
+        let handle_type = if matches_type(field_type, "String") {
+            quote! {
+                as_ref().#error.to_string()
+            }
+        } else {
+            quote! {
+                #error.clone()
+            }
+        };
 
-        quote! {
-             // set original struct fields from builder's option fields
-             #field_name: self.#field_name.as_ref()
-             .expect(&format!("field {} is not set", #field_name_as_string))
-             .to_string()
-        }
+        quote! { #field_name: self.#field_name.#handle_type }
     })
 }
 
