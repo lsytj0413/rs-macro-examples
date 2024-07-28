@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     fn happy_path() {
-        let actual = create_person("Sam".to_string(), 22);
+        let actual = create_person("Sam".to_string(), 22).unwrap();
 
         assert_eq!(actual.name, "Sam".to_string());
         assert_eq!(actual.age, 22);
