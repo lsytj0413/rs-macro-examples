@@ -1,6 +1,5 @@
-[package]
-name = "rs-macro-examples"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
+[workspace]
+members = [
+    "panic-to-result-macro",
+    "panic-to-result-usage",
+]
