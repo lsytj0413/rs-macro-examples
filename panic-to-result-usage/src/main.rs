@@ -19,10 +19,35 @@ fn create_person(name: String, age: u32) -> Person {
     }
 }
 
+
+#[panic_to_result]
+fn create_person_with_empty_panic(name: String, age: u32) -> Person {
+    if age > 30 {
+        panic!();
+    }
+
+    Person {
+        name,
+        age,
+    }
+}
+
 #[panic_to_result]
 fn create_person_with_result(name: String, age: u32) -> Result<Person, String> {
     if age > 30 {
         return Err("I hope I die before I get old".to_string());
+    }
+
+    Ok(Person {
+        name,
+        age,
+    })
+}
+
+#[panic_to_result]
+fn create_person_with_result_and_empty_panic(name: String, age: u32) -> Result<Person, String> {
+    if age > 30 {
+        panic!();
     }
 
     Ok(Person {

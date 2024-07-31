@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use syn::{token::Semi, Expr, ItemFn, ReturnType, Stmt, StmtMacro};
 use quote::{quote, ToTokens};
+use proc_macro_error::{abort, emit_error, proc_macro_error};
 
 fn signature_output_as_result(ast: &ItemFn) -> ReturnType {
     let output = match ast.sig.output {
@@ -11,11 +12,19 @@ fn signature_output_as_result(ast: &ItemFn) -> ReturnType {
         },
         ReturnType::Type(_, ref ty) => {
             if ty.to_token_stream().to_string().contains("Result") {
-                unimplemented!("cannot use macro on a function with Result as return type!");
-            }
+                emit_error!(
+                    ty,
+                    format!(
+                        "this macro can obly be applied to a function that does not yet return a Result, Signature: {}",
+                        quote! { #ty }
+                    )
+                );
 
-            quote! {
-                -> Result<#ty, String>
+                ast.sig.output.to_token_stream()
+            } else {
+                quote! {
+                    -> Result<#ty, String>
+                }
             }
         },
     };
@@ -47,14 +56,25 @@ fn handle_expression(expression: Expr, token: Option<Semi>) -> Stmt {
             let new_statements: Vec<Stmt> = ex_if.then_branch.stmts
                 .into_iter()
                 .map(|s| match s {
-                    Stmt::Macro(ref expr_macro) => 
-                            extract_panic_content(expr_macro)
-                                .map(|t| quote! {
-                                    return Err(#t.to_string());
-                                })
-                                .map(syn::parse2)
-                                .map(Result::unwrap)
-                                .unwrap_or(s),
+                    Stmt::Macro(ref expr_macro) => {
+                        let output = extract_panic_content(expr_macro);
+
+                        if output.as_ref().map(|v| v.is_empty()).unwrap_or_default() {
+                            abort!(
+                                expr_macro,
+                                "panic needs a message!";
+                                help = "try to add a message: panic!(\"Example\".to_string())";
+                                note = "we will add the message to Result",
+                            );
+                        }
+
+                        output.map(|t| quote! {
+                            return Err(#t.to_string());
+                        })
+                        .map(syn::parse2)
+                        .map(Result::unwrap)
+                        .unwrap_or(s)
+                    },
                     _ => s
                 })
                 .collect();
@@ -65,6 +85,8 @@ fn handle_expression(expression: Expr, token: Option<Semi>) -> Stmt {
     }
 }
 
+
+#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn panic_to_result(_a: TokenStream, item: TokenStream) -> TokenStream {
     let mut ast: ItemFn = syn::parse(item).unwrap();
