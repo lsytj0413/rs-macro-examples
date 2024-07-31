@@ -19,6 +19,18 @@ fn create_person(name: String, age: u32) -> Person {
     }
 }
 
+#[panic_to_result]
+fn create_person_with_result(name: String, age: u32) -> Result<Person, String> {
+    if age > 30 {
+        return Err("I hope I die before I get old".to_string());
+    }
+
+    Ok(Person {
+        name,
+        age,
+    })
+}
+
 fn main() {
     println!("Hello, world!");
 }

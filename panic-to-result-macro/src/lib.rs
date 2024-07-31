@@ -10,6 +10,10 @@ fn signature_output_as_result(ast: &ItemFn) -> ReturnType {
             }
         },
         ReturnType::Type(_, ref ty) => {
+            if ty.to_token_stream().to_string().contains("Result") {
+                unimplemented!("cannot use macro on a function with Result as return type!");
+            }
+
             quote! {
                 -> Result<#ty, String>
             }
