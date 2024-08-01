@@ -1,8 +1,10 @@
+use core::panic;
+
 use proc_macro2::TokenStream;
 use quote::{quote};
 use syn::punctuated::Punctuated;
 use syn::token::{Comma};
-use syn::{Field, Ident};
+use syn::{Field, Ident, LitStr, Meta};
 use syn::Type;
 
 #[allow(dead_code)]
@@ -44,11 +46,44 @@ pub fn builder_init_values(fields: &Punctuated<Field, Comma>) -> impl Iterator<I
     })
 }
 
+fn extract_attribute_from_field<'a>(f: &'a Field, name: &'a str) -> Option<&'a syn::Attribute> {
+    f.attrs.iter().find(|&attr| attr.path().is_ident(name))
+}
+
 pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item = TokenStream> + '_ {
     fields.iter().map(|f| {
         let (field_name, field_type) = get_name_and_type(f);
+        let attr = extract_attribute_from_field(f, "rename")
+            .map(|a| &a.meta )
+            .map(|m| {
+                match m {
+                    Meta::List(nested) => {
+                        let a: LitStr = nested.parse_args().unwrap();
+                        Ident::new(&a.value(), a.span())
+                        // a.token().to_string() // cann't use this, because we expect an Ident
+                    },
+                    Meta::Path(_) => {
+                        panic!(
+                            "expected brackets with name of field, like #[rename(name)]"
+                        )
+                    },
+                    Meta::NameValue(_) => {
+                        panic!(
+                            "did not expect name + value"
+                        )
+                    }
+                }
+            });
+        if let Some(attr) = attr {
+            return quote! {
+                pub fn #attr(mut self, input: #field_type) -> Self {
+                    self.#field_name = Some(input);
+                    self
+                }
+            }
+        }
+
         quote! {
-            // an method to set the field
             pub fn #field_name(mut self, input: #field_type) -> Self {
                 self.#field_name = Some(input);
                 self
