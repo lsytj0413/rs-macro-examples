@@ -54,25 +54,15 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item 
     fields.iter().map(|f| {
         let (field_name, field_type) = get_name_and_type(f);
         let attr = extract_attribute_from_field(f, "rename")
-            .map(|a| &a.meta )
-            .map(|m| {
-                match m {
-                    Meta::List(nested) => {
-                        let a: LitStr = nested.parse_args().unwrap();
-                        Ident::new(&a.value(), a.span())
-                        // a.token().to_string() // cann't use this, because we expect an Ident
-                    },
-                    Meta::Path(_) => {
-                        panic!(
-                            "expected brackets with name of field, like #[rename(name)]"
-                        )
-                    },
-                    Meta::NameValue(_) => {
-                        panic!(
-                            "did not expect name + value"
-                        )
-                    }
-                }
+            .map(|a| {
+                let mut content = None;
+                a.parse_nested_meta(|m|{
+                    let i = &m.path.segments.first().unwrap().ident;
+                    content = Some(Ident::new(&i.to_string(), i.span()));
+                    Ok(())
+                }).unwrap();
+
+                content.unwrap()
             });
         if let Some(attr) = attr {
             return quote! {
