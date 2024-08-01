@@ -1,8 +1,9 @@
 use core::panic;
 
-use proc_macro2::TokenStream;
-use quote::{quote, TokenStreamExt};
+use proc_macro2::{Punct, TokenStream};
+use quote::{format_ident, quote, quote_spanned, TokenStreamExt};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::token::{Comma};
 use syn::{Expr, ExprLit, Field, Ident, Lit, LitStr, Meta, MetaNameValue};
 use syn::Type;
@@ -132,6 +133,19 @@ fn default_fallback(field_name: String) -> TokenStream {
     quote! {
         unwrap_or_default()
     }
+}
+
+pub fn optional_default_asserts(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
+    fields.iter().map(|f| {
+        let name = &f.ident.as_ref().unwrap();
+        let ty = &f.ty;
+        let assertion_ident = format_ident!(
+            "__{}DefautlAssertion",
+            name,
+        );
+
+        quote_spanned! {ty.span() => struct #assertion_ident where #ty: core::default::Default;}
+    }).collect()
 }
 
 #[cfg(test)]

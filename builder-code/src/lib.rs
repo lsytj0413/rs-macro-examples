@@ -1,5 +1,6 @@
 mod fields;
 
+use fields::optional_default_asserts;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Attribute, DataStruct, DeriveInput, FieldsNamed};
@@ -43,10 +44,18 @@ pub fn create_builder(item: TokenStream) -> TokenStream {
     let builder_methods = builder_methods(fields);
     let set_fields = original_struct_setters(fields, use_defaults);
 
+    let default_assertions = if use_defaults {
+        optional_default_asserts(fields)
+    } else {
+        vec![]
+    };
+
     quote! {
         struct #builder {
             #(#builder_fields,)*
         }
+
+        #(#default_assertions)*
 
         impl #builder {
             #(#builder_methods)*
