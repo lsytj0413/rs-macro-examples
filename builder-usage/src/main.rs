@@ -100,4 +100,18 @@ mod tests {
         let gleipnir = Gleipnir::builder().tops_of("mountains".to_string()).build();
         assert_eq!(gleipnir.roots_of, "mountains");
     }
+
+    #[test]
+    fn should_use_defaults_when_attribute_is_present() {
+        #[derive(Builder)]
+        #[builder_defaults]
+        struct ExampleStructTwoFields {
+            string_value: String,
+            int_value: i32,
+        }
+
+        let example = ExampleStructTwoFields::builder().build();
+        assert_eq!(example.string_value, String::default());
+        assert_eq!(example.int_value, i32::default());
+    }
 }

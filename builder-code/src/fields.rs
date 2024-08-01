@@ -105,17 +105,33 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
     }).collect()
 }
 
-pub fn original_struct_setters(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item = TokenStream> + '_ {
+pub fn original_struct_setters(fields: &Punctuated<Field, Comma>, use_defaults: bool) -> Vec<TokenStream> {
     fields.iter().map(|f| {
         let (field_name, _) = get_name_and_type(f);
         let field_name_as_string = field_name.as_ref().unwrap().to_string();
+
+        let handle_type = if use_defaults {
+            default_fallback(field_name_as_string)
+        } else {
+            panic_fallback(field_name_as_string)
+        };
+
         quote! {
-            #field_name: self.#field_name
-                .expect(
-                    concat!("field is not set: ", #field_name_as_string)
-                )
+            #field_name: self.#field_name.#handle_type
         }
-    })
+    }).collect()
+}
+
+fn panic_fallback(field_name: String) -> TokenStream {
+    quote! {
+        expect(concat!("field is not set: ", #field_name))
+    }
+}
+
+fn default_fallback(field_name: String) -> TokenStream {
+    quote! {
+        unwrap_or_default()
+    }
 }
 
 #[cfg(test)]
