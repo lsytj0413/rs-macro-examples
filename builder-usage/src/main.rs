@@ -1,10 +1,40 @@
+use std::marker::PhantomData;
+
 use builder_macro::Builder;
 
 #[derive(Builder)]
 struct ExampleStruct {
 }
 
+trait Light {}
+
+struct Green {}
+impl Light for Green {}
+struct Red {}
+impl Light for Red {}
+
+struct TrafficLight<T: Light> {
+    marker: PhantomData<T>
+}
+
+impl TrafficLight<Green> {
+    fn turn_red(&self) -> TrafficLight<Red> {
+        TrafficLight { marker: Default::default() }
+    }
+}
+
+impl TrafficLight<Red> {
+    fn turn_green(&self) -> TrafficLight<Green> {
+        TrafficLight { marker: Default::default() }
+    }
+}
+
 fn main() {
+    let light = TrafficLight{ marker: Default::default() };
+    light.turn_red().turn_green();
+    let light2 = TrafficLight{ marker: Default::default() };
+    light2.turn_green().turn_red();
+
     println!("Hello, world!");
 }
 
