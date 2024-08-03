@@ -1,6 +1,6 @@
 mod fields;
 
-use fields::optional_default_asserts;
+use fields::{optional_default_asserts, ConcreteStrategy, Strategy};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Attribute, DataStruct, DeriveInput, FieldsNamed};
@@ -15,11 +15,17 @@ use crate::fields::{
 
 const DEFAULTS_ATTRIBUTE_NAME: &str = "builder_defaults";
 
-fn use_defaults(attrs: &[Attribute]) -> bool {
-    attrs.iter()
+fn use_defaults(attrs: &[Attribute]) -> impl Strategy {
+    let use_defaults = attrs.iter()
         .any(|attr| {
             attr.path().is_ident(DEFAULTS_ATTRIBUTE_NAME)
-        })
+        });
+    
+    if use_defaults {
+        ConcreteStrategy::Default
+    } else {
+        ConcreteStrategy::Panic
+    }
 }
 
 pub fn create_builder(item: TokenStream) -> TokenStream {
@@ -42,13 +48,8 @@ pub fn create_builder(item: TokenStream) -> TokenStream {
     let builder_fields = builder_field_definitions(fields);
     let builder_inits = builder_init_values(fields);
     let builder_methods = builder_methods(fields);
-    let set_fields = original_struct_setters(fields, use_defaults);
-
-    let default_assertions = if use_defaults {
-        optional_default_asserts(fields)
-    } else {
-        vec![]
-    };
+    let set_fields = original_struct_setters(&use_defaults, fields);
+    let default_assertions = use_defaults.asserts(fields);
 
     quote! {
         struct #builder {

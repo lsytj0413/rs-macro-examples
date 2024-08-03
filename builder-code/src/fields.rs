@@ -106,16 +106,37 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
     }).collect()
 }
 
-pub fn original_struct_setters(fields: &Punctuated<Field, Comma>, use_defaults: bool) -> Vec<TokenStream> {
+pub trait Strategy {
+    fn fallback(&self, field_type: &Type, field_name_as_string: String) -> TokenStream;
+    fn asserts(&self, fields: &Punctuated<Field, Comma>) -> Vec<TokenStream>;
+}
+
+pub enum ConcreteStrategy {
+    Default,
+    Panic,
+}
+
+impl Strategy for ConcreteStrategy {
+    fn fallback(&self, _field_type: &Type, field_name_as_string: String) -> TokenStream {
+        match self {
+            ConcreteStrategy::Default => default_fallback(field_name_as_string),
+            ConcreteStrategy::Panic => panic_fallback(field_name_as_string),
+        }
+    }
+
+    fn asserts(&self, fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
+        match self {
+            ConcreteStrategy::Default => optional_default_asserts(fields),
+            ConcreteStrategy::Panic => vec![],
+        }
+    }
+}
+
+pub fn original_struct_setters<T: Strategy>(strategy: &T, fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
     fields.iter().map(|f| {
         let (field_name, _) = get_name_and_type(f);
         let field_name_as_string = field_name.as_ref().unwrap().to_string();
-
-        let handle_type = if use_defaults {
-            default_fallback(field_name_as_string)
-        } else {
-            panic_fallback(field_name_as_string)
-        };
+        let handle_type = strategy.fallback(&f.ty, field_name_as_string);
 
         quote! {
             #field_name: self.#field_name.#handle_type
