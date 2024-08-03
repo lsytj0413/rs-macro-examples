@@ -1,20 +1,26 @@
 use make_public_macro::public;
 
-#[public]
+#[public(exclude(fourth, third))]
 struct Example {
     first: String,
     pub second: u32,
+    third: bool,
+    fourth: String,
 }
 
-#[public]
-struct ExampleUnnamed(pub String, pub u32);
+impl Example {
+    pub fn new() -> Self {
+        Example {
+            first: "example".to_string(),
+            second: 42,
+            third: true,
+            fourth: "fourth".to_string(),
+        }
+    }
+}
+
 
 fn main() {
-    let s = Example {
-        first: "example".to_string(),
-        second: 42,
-    };
+    let s = Example::new();
     println!("Hello, world, {}, {}", s.first, s.second);
-    let s = ExampleUnnamed("example_unnamed".to_string(), 43);
-    println!("Hello, world, {}, {}", s.0, s.1);
 }
