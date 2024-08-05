@@ -5,18 +5,20 @@ fn main() {
         bucket uniquename
     );
     iac!{
-        lambda a_name
+        lambda(
+            name=a_name
+        )
     }
     iac!(
-        lambda my_name mem 1024 time 15
+        lambda (name=my_name,mem=1024,time=15)
     );
     iac![
-        lambda name bucket uniquename
+        lambda (name=name) bucket uniquename
     ];
     iac!(
-        bucket uniquename => lambda anothername
+        bucket uniquename => lambda (name=anothername)
     );
     iac!{
-        bucket b => lambda l mem 1024 time 15
+        bucket b => lambda (name=l,mem=1024,time=15)
     }
 }

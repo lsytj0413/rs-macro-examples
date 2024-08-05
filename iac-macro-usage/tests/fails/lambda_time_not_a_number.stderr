@@ -1,5 +1,5 @@
 error: expected integer literal
- --> tests/fails/lambda_time_not_a_number.rs:5:25
+ --> tests/fails/lambda_time_not_a_number.rs:5:30
   |
-5 |         lambda name mem "yes"
-  |                         ^^^^^
+5 |         lambda(name=name,mem="yes")
+  |                              ^^^^^

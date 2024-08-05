@@ -2,6 +2,6 @@ use iac_macro::iac;
 
 fn main() {
     iac!{
-        lambda name mem "yes"
+        lambda(name=name,mem="yes")
     }
 }
