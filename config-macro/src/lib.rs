@@ -1,12 +1,12 @@
 use std::{collections::HashMap, fs};
 use proc_macro::{TokenStream};
 use proc_macro2::Span;
-use syn::{parse_macro_input};
+use syn::{parse_macro_input, DeriveInput};
 mod input;
 mod output;
 
 use input::ConfigInput;
-use output::generate_config_struct;
+use output::{generate_annotation_struct, generate_config_struct};
 
 fn find_yaml_values(input: ConfigInput) -> Result<HashMap<String, String>, syn::Error> {
     let file_name = input.path.unwrap_or_else(||{
@@ -32,6 +32,17 @@ pub fn config(item: TokenStream) -> TokenStream {
     let input: ConfigInput = parse_macro_input!(item);
     match find_yaml_values(input) {
         Ok(values) => generate_config_struct(values).into(),
+        Err(e) => e.into_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+pub fn config_struct(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input: ConfigInput = parse_macro_input!(attr);
+    let ast: DeriveInput = parse_macro_input!(item);
+
+    match find_yaml_values(input) {
+        Ok(values) => generate_annotation_struct(ast, values).into(),
         Err(e) => e.into_compile_error().into(),
     }
 }
