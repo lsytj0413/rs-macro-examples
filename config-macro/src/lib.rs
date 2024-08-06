@@ -6,7 +6,9 @@ mod input;
 mod output;
 
 use input::ConfigInput;
-use output::{generate_annotation_struct, generate_config_struct};
+use output::{generate_config_struct};
+#[cfg(feature = "struct")]
+use output::generate_annotation_struct;
 
 fn find_yaml_values(input: ConfigInput) -> Result<HashMap<String, String>, syn::Error> {
     let file_name = input.path.unwrap_or_else(||{
@@ -27,6 +29,7 @@ fn find_yaml_values(input: ConfigInput) -> Result<HashMap<String, String>, syn::
     })?)
 }
 
+#[cfg(feature = "functional")]
 #[proc_macro]
 pub fn config(item: TokenStream) -> TokenStream {
     let input: ConfigInput = parse_macro_input!(item);
@@ -36,13 +39,15 @@ pub fn config(item: TokenStream) -> TokenStream {
     }
 }
 
+#[cfg(feature = "struct")]
 #[proc_macro_attribute]
 pub fn config_struct(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input: ConfigInput = parse_macro_input!(attr);
     let ast: DeriveInput = parse_macro_input!(item);
+    let exclude_from = input.exclude_from;
 
     match find_yaml_values(input) {
-        Ok(values) => generate_annotation_struct(ast, values).into(),
+        Ok(values) => generate_annotation_struct(ast, values, &exclude_from).into(),
         Err(e) => e.into_compile_error().into(),
     }
 }

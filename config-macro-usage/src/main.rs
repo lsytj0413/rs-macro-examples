@@ -1,7 +1,7 @@
 use config_macro::{config, config_struct};
 
 
-#[config_struct]
+#[config_struct(exclude = "from")]
 #[derive(Debug)]
 struct ConfigObject {
 

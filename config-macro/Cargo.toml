@@ -14,3 +14,8 @@ serde_yaml = "0.9.27"
 
 [lib]
 proc-macro = true
+
+[features]
+default = ["functional"]
+struct = []
+functional = []
