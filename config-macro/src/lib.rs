@@ -1,3 +1,8 @@
+#![doc = include_str!("../README.md")]
+
+//! ## Documentation from lib.rs
+//! Here is documentation placed directly within lib.rs...
+
 use std::{collections::HashMap, fs};
 use proc_macro::{TokenStream};
 use proc_macro2::Span;
@@ -29,6 +34,9 @@ fn find_yaml_values(input: ConfigInput) -> Result<HashMap<String, String>, syn::
     })?)
 }
 
+/// This function-like macro will generate a struct called `Config`
+/// which contains a `HashMap<String,String>` with all
+/// the yaml config properties.
 #[cfg(feature = "functional")]
 #[proc_macro]
 pub fn config(item: TokenStream) -> TokenStream {
@@ -39,7 +47,25 @@ pub fn config(item: TokenStream) -> TokenStream {
     }
 }
 
-#[cfg(feature = "struct")]
+
+/// This macro allows manipulation of an existing struct
+/// to serve as a `config` struct.
+/// It will replace any existing fields with those present
+/// in the configuration.
+/// 
+/// ```rust
+/// use config_macro::config_struct;
+/// 
+/// #[config_struct(path = "./configuration/config.yaml")]
+/// struct Example {}
+/// 
+/// // Example now has a new method
+/// let e = Example::new();
+/// 
+/// // e now contains a `user` field that we can access
+/// println!("{}", e.user);
+/// ```
+#[cfg(any(feature = "struct", doc))]
 #[proc_macro_attribute]
 pub fn config_struct(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input: ConfigInput = parse_macro_input!(attr);
