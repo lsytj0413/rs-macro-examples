@@ -1,6 +1,6 @@
 use proc_macro2::Ident;
 use proc_macro::TokenStream;
-use syn::{parse::{Parse, ParseStream}, parse_macro_input, Data::Struct, DataStruct, DeriveInput, Fields::Named, Fields::Unnamed, FieldsNamed, FieldsUnnamed};
+use syn::{parse::{Parse, ParseStream}, parse_macro_input, Data::Struct, Data::Enum, DataEnum, DataStruct, DeriveInput, Fields::{Named, Unnamed}, FieldsNamed, FieldsUnnamed};
 use quote::{quote, ToTokens};
 
 struct StructField {
@@ -74,7 +74,18 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     }), ..
             }
         ) => (unnamed, false),
-        _ => unimplemented!("only works for structs with named or unamed fields")
+        Enum(DataEnum{
+            ref variants,
+            ..
+        }) => {
+            let as_iter = variants.iter();
+            return quote! {
+                pub enum #name {
+                    #(#as_iter,)*
+                }
+            }.into()
+        },
+        _ => unimplemented!("only works for structs with named or unamed fields"),
     };
     let builder_fields = fields.iter().map(|f| {
         syn::parse2::<StructField>(f.to_token_stream()).unwrap()

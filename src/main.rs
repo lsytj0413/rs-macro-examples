@@ -9,6 +9,12 @@ struct Example {
 #[public]
 struct ExampleUnnamed(pub String, pub u32);
 
+#[public]
+enum ExampleEnum {
+    First(String),
+    Second(u32),
+}
+
 fn main() {
     let s = Example {
         first: "example".to_string(),
