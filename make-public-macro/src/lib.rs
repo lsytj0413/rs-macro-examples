@@ -57,6 +57,7 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
     eprintln!("{:?}", &ast);
 
     let name = ast.ident;
+    let attrs = ast.attrs;
     let (fields, is_named) = match ast.data {
         Struct(
             DataStruct{
@@ -80,6 +81,7 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }) => {
             let as_iter = variants.iter();
             return quote! {
+                #(#attrs)*
                 pub enum #name {
                     #(#as_iter,)*
                 }
@@ -93,12 +95,14 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let builder_fields2 = builder_fields.clone();
 
     let mut public_version = quote!{
+        #(#attrs)*
         pub struct #name {
             #(#builder_fields,)*
         }
     };
     if !is_named {
         public_version = quote!{
+            #(#attrs)*
             pub struct #name(#(#builder_fields2,)*);
         }
     }

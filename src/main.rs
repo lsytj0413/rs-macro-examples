@@ -1,15 +1,18 @@
 use make_public_macro::public;
 
 #[public]
+#[derive(Debug)]
 struct Example {
     first: String,
     pub second: u32,
 }
 
 #[public]
+#[derive(Debug)]
 struct ExampleUnnamed(pub String, pub u32);
 
 #[public]
+#[derive(Debug)]
 enum ExampleEnum {
     First(String),
     Second(u32),
