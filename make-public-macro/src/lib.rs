@@ -1,6 +1,8 @@
+use std::{result};
+
 use proc_macro2::Ident;
 use proc_macro::TokenStream;
-use syn::{parse::{Parse, ParseStream}, parse_macro_input, Data::Struct, Data::Enum, DataEnum, DataStruct, DeriveInput, Fields::{Named, Unnamed}, FieldsNamed, FieldsUnnamed};
+use syn::{parse::{Parse, ParseStream}, parse_macro_input, token::Colon, Data::{Enum, Struct}, DataEnum, DataStruct, DeriveInput, Fields::{Named, Unnamed}, FieldsNamed, FieldsUnnamed, Visibility};
 use quote::{quote, ToTokens};
 
 struct StructField {
@@ -24,30 +26,23 @@ impl ToTokens for StructField {
 }
 
 impl Parse for StructField {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        // cursor is an (0, 1) struct, which 1 is the rest of idents
-        let mut first = input.cursor().ident().unwrap();
-        if first.0.to_string().contains("pub") {
-            first = first.1.ident().unwrap();
-        };
-        let res = match first.1.punct() {
-            Some(second) => {
-                Ok(StructField{
-                    name: Some(first.0),
-                    ty: second.1.ident().unwrap().0,
-                })
-            },
-            None => {
-                Ok(StructField{
-                    name: None,
-                    ty: first.0,
-                })
-            }
-        };
+    fn parse(input: ParseStream) -> result::Result<Self, syn::Error> {
+        let _vis: result::Result<Visibility, _> = input.parse();
+        let name = input.parse::<Ident>().ok();
+        let _colon = input.parse::<Colon>();
+        let ty = input.parse::<Ident>().ok();
 
-        // We must consume the rest of the input
-        let _: Result<proc_macro2::TokenStream, _> = input.parse();
-        res
+        if ty.is_some() {
+            return Ok(StructField{
+                name: name,
+                ty: ty.unwrap(),
+            })
+        }
+
+        Ok(StructField {
+            name: None,
+            ty: name.unwrap()
+        })
     }
 }
 

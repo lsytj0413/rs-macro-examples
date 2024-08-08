@@ -24,6 +24,6 @@ fn main() {
         second: 42,
     };
     println!("Hello, world, {}, {}", s.first, s.second);
-    let s = ExampleUnnamed("example_unnamed".to_string(), 43);
-    println!("Hello, world, {}, {}", s.0, s.1);
+    // let s = ExampleUnnamed("example_unnamed".to_string(), 43);
+    // println!("Hello, world, {}, {}", s.0, s.1);
 }
