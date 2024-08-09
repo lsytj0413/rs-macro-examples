@@ -1,18 +1,10 @@
 use private_macro::private;
 
-private!(
-    struct Example {
-        string_value: String,
-        number_value: i32,
-    }
-);
+private!(ExampleStruct);
+struct ExampleStruct {}
 
 fn main() {
-    let e = Example {
-        string_value: "Hello".to_string(),
-        number_value: 42,
-    };
+    let e = ExampleStruct {    };
     
-    e.get_string_value();
-    e.get_number_value();
+    e.hello_world();
 }
