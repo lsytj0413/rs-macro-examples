@@ -4,14 +4,14 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 
 struct ComposeInput {
-    expressions: Punctuated::<Ident, Token!(.)>,
+    expressions: Punctuated::<Ident, Token!(->)>,
 }
 
 impl Parse for ComposeInput {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
         Ok(
             ComposeInput {
-                expressions: Punctuated::<Ident, Token!(.)>::parse_terminated(input).unwrap()
+                expressions: Punctuated::<Ident, Token!(->)>::parse_terminated(input).unwrap()
             }
         )
     }

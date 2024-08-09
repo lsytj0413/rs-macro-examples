@@ -10,7 +10,7 @@ fn stringify(n: i32) -> String {
 
 fn main() {
     let composed = compose!(
-        add_one . add_one . stringify
+        add_one -> add_one -> stringify
     );
     println!("{:?}", composed(5))
 }
