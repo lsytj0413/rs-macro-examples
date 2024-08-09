@@ -2,8 +2,8 @@ use private_macro::private;
 
 private!(
     struct Example {
-        string_value: String,
-        number_value: i32,
+        pub string_value: String,
+        pub number_value: i32,
     }
 );
 

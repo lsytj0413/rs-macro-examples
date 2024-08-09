@@ -21,7 +21,7 @@ fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
         ),
     };
 
-    named_fields.iter()
+    let get_methods = named_fields.iter()
         .map(|f| {
             let field_name = f.ident.as_ref().take().unwrap();
             let type_name = &f.ty;
@@ -33,22 +33,62 @@ fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
                 }
             }
         })
-        .collect()
+        .collect();
+    get_methods
+}
+
+fn generate_private_struct(name: &Ident, ast: &DeriveInput) -> proc_macro2::TokenStream {
+    let named_fields = match ast.data {
+        Struct(
+            DataStruct {
+                fields: Named(
+                    FieldsNamed {
+                        ref named, ..
+                    },
+                ), ..
+            }
+        ) => named,
+        _ => unimplemented!(
+            "only works for structs with named fields"
+        ),
+    };
+    let fields: Vec<proc_macro2::TokenStream> = named_fields
+        .iter()
+        .map(|field| {
+            let name = field.ident.as_ref().unwrap();
+            let ty = &field.ty;
+            quote! {
+                #name: #ty
+            }
+        })
+        .collect();
+
+    quote! {
+        struct #name {
+            #(#fields),*
+        }
+    }
 }
 
 #[proc_macro]
 pub fn private(item: TokenStream) -> TokenStream {
-    let item_as_stream: quote::__private::TokenStream = item.clone().into();
-
     let ast = parse_macro_input!(item as DeriveInput);
     let name = &ast.ident;
     let methods = generated_methods(&ast);
+    let private_struct = generate_private_struct(name, &ast);
 
     quote!{
-        #item_as_stream 
+        #private_struct 
 
         impl #name {
             #(#methods)*
+
+            pub fn new() -> Self {
+                Self{
+                    string_value: "Hello".to_string(),
+                    number_value: 1,
+                }
+            }
         }
     }.into()
 }
