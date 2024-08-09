@@ -1,3 +1,4 @@
+use proc_macro_error::{emit_error, proc_macro_error};
 use quote::quote;
 use proc_macro::{TokenStream};
 use syn::spanned::Spanned;
@@ -6,7 +7,7 @@ use syn::__private::{Span, TokenStream2};
 use syn::Data::Struct;
 use syn::Fields::Named;
 
-fn generated_methods(ast: &DeriveInput) -> Result<Vec<TokenStream2>, syn::Error> {
+fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
     let named_fields = match ast.data {
         Struct(
             DataStruct {
@@ -17,10 +18,13 @@ fn generated_methods(ast: &DeriveInput) -> Result<Vec<TokenStream2>, syn::Error>
                 ), ..
             }
         ) => named,
-        _ => return Err(syn::Error::new(ast.span(), "Only structs with named fields are supported")),
+        _ => {
+            emit_error!(ast.span(), "Only structs with named fields are supported");
+            return vec![]
+        },
     };
 
-    Ok(named_fields.iter()
+    named_fields.iter()
         .map(|f| {
             let field_name = f.ident.as_ref().take().unwrap();
             let type_name = &f.ty;
@@ -32,9 +36,10 @@ fn generated_methods(ast: &DeriveInput) -> Result<Vec<TokenStream2>, syn::Error>
                 }
             }
         })
-        .collect())
+        .collect()
 }
 
+#[proc_macro_error]
 #[proc_macro]
 pub fn private(item: TokenStream) -> TokenStream {
     let item_as_stream: quote::__private::TokenStream = item.clone().into();
@@ -43,16 +48,11 @@ pub fn private(item: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let methods = generated_methods(&ast);
 
-    match methods {
-        Ok(methods) => {
-            quote! {
-                #item_as_stream 
+    quote! {
+        #item_as_stream 
 
-                impl #name {
-                    #(#methods)*
-                }
-            }.into()
-        },
-        Err(e) => return e.to_compile_error().into(),
-    }
+        impl #name {
+            #(#methods)*
+        }
+    }.into()
 }
