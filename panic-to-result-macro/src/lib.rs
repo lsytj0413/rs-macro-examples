@@ -50,41 +50,51 @@ fn extract_panic_content(expr_macro: &StmtMacro) -> Option<proc_macro2::TokenStr
     }
 }   
 
+fn build_stmts(stmts: &Vec<Stmt>) -> Vec<Stmt> {
+    stmts
+    .into_iter()
+    .map(|s| {
+        let s = s.clone();
+        match s {
+        Stmt::Macro(ref expr_macro) => {
+            let output = extract_panic_content(expr_macro);
+
+            if output.as_ref().map(|v| v.is_empty()).unwrap_or_default() {
+                abort!(
+                    expr_macro,
+                    "panic needs a message!";
+                    help = "try to add a message: panic!(\"Example\".to_string())";
+                    note = "we will add the message to Result",
+                );
+            }
+
+            output.map(|t| quote! {
+                return Err(#t.to_string());
+            })
+            .map(syn::parse2)
+            .map(Result::unwrap)
+            .unwrap_or(s)
+        },
+        _ => s
+    }})
+    .collect()
+}
+
 fn handle_expression(expression: Expr, token: Option<Semi>) -> Stmt {
     match expression {
         Expr::If(mut ex_if) => {
-            let new_statements: Vec<Stmt> = ex_if.then_branch.stmts
-                .into_iter()
-                .map(|s| match s {
-                    Stmt::Macro(ref expr_macro) => {
-                        let output = extract_panic_content(expr_macro);
-
-                        if output.as_ref().map(|v| v.is_empty()).unwrap_or_default() {
-                            abort!(
-                                expr_macro,
-                                "panic needs a message!";
-                                help = "try to add a message: panic!(\"Example\".to_string())";
-                                note = "we will add the message to Result",
-                            );
-                        }
-
-                        output.map(|t| quote! {
-                            return Err(#t.to_string());
-                        })
-                        .map(syn::parse2)
-                        .map(Result::unwrap)
-                        .unwrap_or(s)
-                    },
-                    _ => s
-                })
-                .collect();
+            let new_statements = build_stmts(&ex_if.then_branch.stmts);
             ex_if.then_branch.stmts = new_statements;
             Stmt::Expr(Expr::If(ex_if), token)
+        },
+        Expr::While(mut ex_while) => {
+            let new_statements = build_stmts(&ex_while.body.stmts);
+            ex_while.body.stmts = new_statements;
+            Stmt::Expr(Expr::While(ex_while), token)
         },
         _ => Stmt::Expr(expression, token)
     }
 }
-
 
 #[proc_macro_error]
 #[proc_macro_attribute]

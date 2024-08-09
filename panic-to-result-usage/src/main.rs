@@ -19,6 +19,18 @@ fn create_person(name: String, age: u32) -> Person {
     }
 }
 
+#[panic_to_result]
+fn create_person_while(name: String, age: u32) -> Person {
+    while age > 30 {
+        panic!("I hope I die before I get old");
+    }
+
+    Person {
+        name,
+        age,
+    }
+}
+
 
 #[panic_to_result]
 fn create_person_with_empty_panic(name: String, age: u32) -> Person {
