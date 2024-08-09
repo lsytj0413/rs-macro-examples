@@ -81,7 +81,7 @@ mod tests {
     fn should_generate_builder_for_struct_with_one_renamed_property() {
         #[derive(Builder)]
         struct Gleipnir {
-            #[rename(tops_of)]
+            #[builder(rename = "tops_of")]
             roots_of: String,
         }
 
@@ -93,7 +93,7 @@ mod tests {
     fn should_generate_builder_for_struct_with_two_props_one_renamed_property() {
         #[derive(Builder)]
         struct Gleipnir {
-            #[rename(tops_of)]
+            #[builder(rename = "tops_of")]
             roots_of: String,
             breath_of_a_fish: u8,
         }

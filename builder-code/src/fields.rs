@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{quote};
 use syn::punctuated::Punctuated;
 use syn::token::{Comma};
-use syn::{Field, Ident, LitStr, Meta};
+use syn::{Field, Ident, LitStr, Meta, Token};
 use syn::Type;
 
 #[allow(dead_code)]
@@ -53,12 +53,15 @@ fn extract_attribute_from_field<'a>(f: &'a Field, name: &'a str) -> Option<&'a s
 pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> impl Iterator<Item = TokenStream> + '_ {
     fields.iter().map(|f| {
         let (field_name, field_type) = get_name_and_type(f);
-        let attr = extract_attribute_from_field(f, "rename")
+        let attr = extract_attribute_from_field(f, "builder")
             .map(|a| {
                 let mut content = None;
                 a.parse_nested_meta(|m|{
-                    let i = &m.path.segments.first().unwrap().ident;
-                    content = Some(Ident::new(&i.to_string(), i.span()));
+                    if m.path.is_ident("rename") {
+                        let _: Token![=] = m.input.parse().unwrap();
+                        let name: LitStr = m.input.parse().unwrap();
+                        content = Some(Ident::new(&name.value(), name.span()));
+                    }
                     Ok(())
                 }).unwrap();
 
