@@ -7,6 +7,10 @@ private!(
     }
 );
 
+private!(
+    enum Example2{}
+);
+
 fn main() {
     let e = Example {
         string_value: "Hello".to_string(),

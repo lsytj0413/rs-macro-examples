@@ -1,11 +1,12 @@
 use quote::quote;
 use proc_macro::{TokenStream};
+use syn::spanned::Spanned;
 use syn::{parse_macro_input, DataStruct, DeriveInput, FieldsNamed, Ident};
 use syn::__private::{Span, TokenStream2};
 use syn::Data::Struct;
 use syn::Fields::Named;
 
-fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
+fn generated_methods(ast: &DeriveInput) -> Result<Vec<TokenStream2>, syn::Error> {
     let named_fields = match ast.data {
         Struct(
             DataStruct {
@@ -16,12 +17,10 @@ fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
                 ), ..
             }
         ) => named,
-        _ => unimplemented!(
-            "only works for structs with named fields"
-        ),
+        _ => return Err(syn::Error::new(ast.span(), "Only structs with named fields are supported")),
     };
 
-    named_fields.iter()
+    Ok(named_fields.iter()
         .map(|f| {
             let field_name = f.ident.as_ref().take().unwrap();
             let type_name = &f.ty;
@@ -33,7 +32,7 @@ fn generated_methods(ast: &DeriveInput) -> Vec<TokenStream2> {
                 }
             }
         })
-        .collect()
+        .collect())
 }
 
 #[proc_macro]
@@ -44,11 +43,16 @@ pub fn private(item: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let methods = generated_methods(&ast);
 
-    quote!{
-        #item_as_stream 
+    match methods {
+        Ok(methods) => {
+            quote! {
+                #item_as_stream 
 
-        impl #name {
-            #(#methods)*
-        }
-    }.into()
+                impl #name {
+                    #(#methods)*
+                }
+            }.into()
+        },
+        Err(e) => return e.to_compile_error().into(),
+    }
 }
