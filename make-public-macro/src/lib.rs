@@ -1,6 +1,6 @@
 use proc_macro2::Ident;
 use proc_macro::TokenStream;
-use syn::{parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, token::Colon, Data::Struct, DataStruct, DeriveInput, Fields::Named, FieldsNamed, Visibility};
+use syn::{parse::{Parse, ParseStream}, parse2, parse_macro_input, punctuated::Punctuated, token::Colon, Data::{self, Struct}, DataStruct, DeriveInput, Fields::{self, Named}, FieldsNamed, Visibility};
 use quote::{quote, ToTokens};
 
 struct StructField {
@@ -43,8 +43,8 @@ impl Parse for StructField {
 
 #[proc_macro_attribute]
 pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(item as DeriveInput);
-    let name = ast.ident;
+    let mut ast = parse_macro_input!(item as DeriveInput);
+    let name = &ast.ident;
     let fields = match ast.data {
         Struct(
             DataStruct{
@@ -60,10 +60,18 @@ pub fn public(_attr: TokenStream, item: TokenStream) -> TokenStream {
         syn::parse2::<StructField>(f.to_token_stream()).unwrap()
     });
 
-    let public_version = quote!{
-        pub struct #name {
+    let builder_fields_with_braces = quote!{
+        {
             #(#builder_fields,)*
         }
     };
-    public_version.into()
+    ast.data = Data::Struct(DataStruct {
+        struct_token: Default::default(),
+        fields: Fields::Named(
+            parse2(builder_fields_with_braces).unwrap()
+        ),
+        semi_token: None
+    });
+    ast.vis = Visibility::Public(Default::default());
+    ast.to_token_stream().into()
 }
