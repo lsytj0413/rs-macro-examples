@@ -17,27 +17,37 @@ impl Parse for ConfigInput {
             return Ok(ConfigInput { path: None, exclude_from: false });
         }
 
-        if input.peek(kw::path) {
-            let _: kw::path = input.parse().expect("checked that this exists");
-            let _: Token![=] = input.parse().map_err(|_| {
-                syn::Error::new(input.span(), "expected '=' after 'path'")
-            })?;
-            let value: LitStr = input.parse().map_err(|_| {
-                syn::Error::new(input.span(), "expected string literal after 'path'")
-            })?;
-            Ok(ConfigInput { path: Some(value.value()), exclude_from: false })
-        } else if input.peek(kw::exclude) {
-            let _: kw::exclude = input.parse().expect("checked that this exists");
-            let _: Token![=] = input.parse().map_err(|_| {
-                syn::Error::new(input.span(), "expected '=' after 'exclude'")
-            })?;
-            let value: LitStr = input.parse().map_err(|_| {
-                syn::Error::new(input.span(), "expected string literal after 'exclude'")
-            })?;
-            let exclude_from = value.value() == "from";
-            Ok(ConfigInput { path: None, exclude_from: exclude_from })
-        } else {
-            return Err(syn::Error::new(input.span(), "config macro only allows for 'path' or 'exclude' input"));
+        let mut path = None;
+        let mut exclude_from = false;
+        loop {
+            if input.peek(kw::path) {
+                let _: kw::path = input.parse().expect("checked that this exists");
+                let _: Token![=] = input.parse().map_err(|_| {
+                    syn::Error::new(input.span(), "expected '=' after 'path'")
+                })?;
+                let value: LitStr = input.parse().map_err(|_| {
+                    syn::Error::new(input.span(), "expected string literal after 'path'")
+                })?;
+                path = Some(value.value());
+                let _: Token![,] = input.parse().unwrap();
+            } else if input.peek(kw::exclude) {
+                let _: kw::exclude = input.parse().expect("checked that this exists");
+                let _: Token![=] = input.parse().map_err(|_| {
+                    syn::Error::new(input.span(), "expected '=' after 'exclude'")
+                })?;
+                let value: LitStr = input.parse().map_err(|_| {
+                    syn::Error::new(input.span(), "expected string literal after 'exclude'")
+                })?;
+                exclude_from = value.value() == "from";
+                let _: Token![,] = input.parse().unwrap();
+            } else if !input.is_empty() {
+                return Err(syn::Error::new(input.span(), "config macro only allows for 'path' or 'exclude' input"));
+            }
+            else {
+                break;
+            }
         }
+
+        Ok(ConfigInput { path, exclude_from })
     }
 }

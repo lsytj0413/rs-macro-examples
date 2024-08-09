@@ -1,7 +1,7 @@
 use config_macro::{config, config_struct};
 
 
-#[config_struct(exclude = "from")]
+#[config_struct(exclude = "from", path = "./configuration/config.yaml", )]
 #[derive(Debug)]
 struct ConfigObject {
 
