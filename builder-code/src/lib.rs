@@ -63,6 +63,44 @@ mod tests {
     use super::*;
 
     #[test]
+    fn builder_struct_with_one_field() {
+        let input = quote! {
+            struct ExampleStruct {
+                field: i32,
+            }
+        };
+        let expected = quote! {
+            struct ExampleStructBuilder {
+                field: Option<i32>,
+            }
+
+            impl ExampleStructBuilder {
+                pub fn field(mut self, input: i32) -> Self {
+                    self.field = Some(input);
+                    self
+                }
+
+                pub fn build(self) -> ExampleStruct {
+                    ExampleStruct {
+                        field: self.field.expect(concat!("field is not set: ", "field")),
+                    }
+                }
+            }
+
+            impl ExampleStruct {
+                pub fn builder() -> ExampleStructBuilder {
+                    ExampleStructBuilder {
+                        field: None,
+                    }
+                }
+            }
+        };
+
+        let actual = create_builder(input);
+        assert_eq!(actual.to_string(), expected.to_string());
+    }
+
+    #[test]
     fn builder_struct_name_shoule_be_present_in_output() {
         let input = quote! {
             struct StructWithNoFields {
