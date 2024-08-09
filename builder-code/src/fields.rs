@@ -138,10 +138,11 @@ fn default_fallback(field_name: String) -> TokenStream {
 pub fn optional_default_asserts(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
     fields.iter().map(|f| {
         let name = &f.ident.as_ref().unwrap();
+        let uppercase_name = format!("{}", name).to_uppercase();
         let ty = &f.ty;
         let assertion_ident = format_ident!(
             "__{}DefautlAssertion",
-            name,
+            uppercase_name,
         );
 
         quote_spanned! {ty.span() => struct #assertion_ident where #ty: core::default::Default;}

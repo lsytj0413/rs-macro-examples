@@ -1,7 +1,9 @@
 use builder_macro::Builder;
 
 #[derive(Builder)]
+#[builder_defaults]
 struct ExampleStruct {
+    val: String,
 }
 
 fn main() {
