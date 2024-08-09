@@ -59,13 +59,19 @@ struct Bucket {
 
 impl Parse for Bucket {
     fn parse(input: syn::parse::ParseStream) -> Result<Self, syn::Error> {
-        let bucket_token = input.parse::<kw::bucket>().expect("we just checked for this token");
-        let bucket_name = input.parse()
-            .map(|v: Ident| v.to_string())
-            .map_err(|_| syn::Error::new(
-                bucket_token.span(),
-                "bucket needs a name"
-            ))?;
+        let _ = input.parse::<kw::bucket>().expect("we just checked for this token");
+
+        let content;
+        parenthesized!(content in input);
+        let bucket_name;
+        if content.peek(kw::name) {
+            let _ = content.parse::<kw::name>().expect("we just checked for this token");
+            let _: Token![=] = content.parse().map_err(|_| syn::Error::new(content.span(), "prop name and value should be separated by ="))?;
+            bucket_name = content.parse().map(|v: Ident| v.to_string()).map_err(|_| syn::Error::new(content.span(), "name property needs a value"))?;
+        } else {
+            return Err(syn::Error::new(input.span(), format!("unknown property for bucket")));
+        }
+        
         let event_needed = if !input.peek(kw::lambda) && input.peek(Token![=>]) {
             let _ = input.parse::<Token![=>]>().unwrap();
             true
