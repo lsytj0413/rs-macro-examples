@@ -51,7 +51,7 @@ fn generate_inits(yaml_values: &HashMap<String, String>) -> Vec<proc_macro2::Tok
     }).collect()
 }
 
-#[cfg(feature = "struct")]
+#[cfg(feature = "from")]
 fn generate__inserts_for_from(yaml_values: &HashMap<String, String>) -> Vec<proc_macro2::TokenStream> {
     yaml_values.iter().map(|v| {
         let key = v.0;
@@ -62,7 +62,7 @@ fn generate__inserts_for_from(yaml_values: &HashMap<String, String>) -> Vec<proc
     }).collect()
 }
 
-#[cfg(feature = "struct")]
+#[cfg(feature = "from")]
 fn generate_from_method(
     name: &Ident,
     yaml_values: &HashMap<String, String>,
@@ -77,6 +77,11 @@ fn generate_from_method(
             }
         }
     }
+}
+
+#[cfg(not(feature = "from"))]
+fn generate_from_method(_name: &Ident, _yaml_values: &HashMap<String, String>) -> proc_macro2::TokenStream {
+    quote! {}
 }
 
 #[cfg(feature = "struct")]

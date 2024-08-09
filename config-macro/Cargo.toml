@@ -26,3 +26,4 @@ proc-macro = true
 default = ["functional"]
 struct = []
 functional = []
+from = []
