@@ -21,4 +21,5 @@ fn main() {
     iac!{
         bucket(name=b) => lambda (name=l,mem=1024,time=15)
     }
+    iac!(buc);
 }

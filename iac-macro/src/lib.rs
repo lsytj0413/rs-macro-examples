@@ -1,3 +1,6 @@
+use std::fmt::format;
+
+use edit_distance::edit_distance;
 use proc_macro::{TokenStream};
 use proc_macro2::Span;
 use quote::quote;
@@ -28,9 +31,24 @@ impl Parse for IacInput {
             } else if input.peek(kw::lambda) {
                 lambda = Some(input.parse()?);
             } else if !input.is_empty() {
+                let remainder = input.to_string();
+                let distance_to_bucket = edit_distance(&remainder, "bucket");
+                let distance_to_lambda = edit_distance(&remainder, "lambda");
+                if distance_to_bucket > 10 && distance_to_lambda > 10 {
+                    return Err(syn::Error::new(
+                        input.lookahead1().error().span(), 
+                        "only 'bucket' and 'lambda' resources are supported",
+                    ));
+                }
+
+                let sugesstion = if distance_to_bucket > distance_to_lambda {
+                    "lambda".to_string()
+                } else {
+                    "bucket".to_string()
+                };
                 return Err(syn::Error::new(
                     input.lookahead1().error().span(), 
-                    "only 'bucket' and 'lambda' resources are supported",
+                    format!("only 'bucket' and 'lambda' resources are supported, did you mean {}?", sugesstion),
                 ));
             } else {
                 break;
