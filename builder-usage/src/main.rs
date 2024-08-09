@@ -53,6 +53,7 @@ mod tests {
     fn should_generate_builder_for_struct_with_multiple_properties() {
         #[derive(Builder)]
         struct Gleipnir {
+            #[uppercase]
             roots_of: String,
             breath_of_a_fish: u8,
             other_attrs: Vec<String>,
@@ -63,7 +64,7 @@ mod tests {
             .breath_of_a_fish(1)
             .other_attrs(vec!["a".to_string(), "b".to_string()])
             .build();
-        assert_eq!(gleipnir.roots_of, "mountains");
+        assert_eq!(gleipnir.roots_of, "MOUNTAINS");
         assert_eq!(gleipnir.breath_of_a_fish, 1);
         assert_eq!(gleipnir.other_attrs, vec!["a".to_string(), "b".to_string()]);
     }

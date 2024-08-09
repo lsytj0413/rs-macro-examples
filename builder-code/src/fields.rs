@@ -51,9 +51,26 @@ fn extract_attribute_from_field<'a>(f: &'a Field, name: &'a str) -> Option<&'a s
     f.attrs.iter().find(|&attr| attr.path().is_ident(name))
 }
 
+fn is_uppercase_field(field: &Field) -> bool {
+    field.attrs.iter().any(|attr| {
+        attr.path().is_ident("uppercase")
+    })
+}
+
 pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
     fields.iter().map(|f| {
         let (field_name, field_type) = get_name_and_type(f);
+        let is_uppercase = is_uppercase_field(f);
+        if is_uppercase && !matches_type(field_type, "String") {
+            panic!("uppercase attribute only works with String")
+        }
+        let mut to_add: proc_macro2::TokenStream = quote! {}.into();
+        if is_uppercase {
+            to_add = quote! {
+                .to_uppercase()
+            }.into()
+        }
+
         extract_attribute_from_field(f, "rename")
             .map(|a| &a.meta )
             .map(|m| {
@@ -90,7 +107,7 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
             .map(|attr| {
                 quote! {
                     pub fn #attr(mut self, input: #field_type) -> Self {
-                        self.#field_name = Some(input);
+                        self.#field_name = Some(input #to_add);
                         self
                     }
                 }
@@ -98,7 +115,7 @@ pub fn builder_methods(fields: &Punctuated<Field, Comma>) -> Vec<TokenStream> {
             .unwrap_or_else(|| {
                 quote! {
                     pub fn #field_name(mut self, input: #field_type) -> Self {
-                        self.#field_name = Some(input);
+                        self.#field_name = Some(input #to_add);
                         self
                     }
                 }
